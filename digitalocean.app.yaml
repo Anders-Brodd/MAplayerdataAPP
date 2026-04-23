@@ -1,0 +1,39 @@
+name: telemetry-analytics
+region: nyc
+
+services:
+  - name: web
+    github:
+      repo: Anders-Brodd/MA-Player-Data
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: ./Dockerfile
+    source_dir: /
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+        type: general
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+        type: general
+      - key: DB_PATH
+        value: /app/data/telemetry.db
+        scope: RUN_TIME
+        type: general
+      - key: ROBLOX_API_KEY
+        value: replace-me
+        scope: RUN_TIME
+        type: secret
+      - key: ROBLOX_UNIVERSE_ID
+        value: "9485099582"
+        scope: RUN_TIME
+        type: general
+      - key: ROBLOX_DATASTORE_NAME
+        value: MA_PlayerTelemetry_V2
+        scope: RUN_TIME
+        type: general
