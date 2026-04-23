@@ -4,7 +4,7 @@ region: nyc
 services:
   - name: web
     github:
-      repo: Anders-Brodd/MA-Player-Data
+      repo: Anders-Brodd/MAplayerdataAPP
       branch: main
       deploy_on_push: true
     dockerfile_path: ./Dockerfile
@@ -26,7 +26,7 @@ services:
         scope: RUN_TIME
         type: general
       - key: ROBLOX_API_KEY
-        value: replace-me
+        value: M6tV0dxYS02r/wXPtDWAFEqi5NnyzQFYkPoCcBCfn+PJDeFqZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaGRXUWlPaUpTYjJKc2IzaEpiblJsY201aGJDSXNJbWx6Y3lJNklrTnNiM1ZrUVhWMGFHVnVkR2xqWVhScGIyNVRaWEoyYVdObElpd2lZbUZ6WlVGd2FVdGxlU0k2SWswMmRGWXdaSGhaVXpBeWNpOTNXRkIwUkZkQlJrVnhhVFZPYm5sNlVVWlphMUJ2UTJOQ1EyWnVLMUJLUkdWR2NTSXNJbTkzYm1WeVNXUWlPaUl6T1Rnd05URXpOVGtpTENKbGVIQWlPakUzTnpZNU9EYzNPRFlzSW1saGRDSTZNVGMzTmprNE5ERTROaXdpYm1KbUlqb3hOemMyT1RnME1UZzJmUS5JNkJTTHpwUUxGeHBwM3VRc3JZUWd5RmhwaXVraUd4R0dYSEU1ZEFaQmdtdDFnSEhDRGlWSG16UE0zeGozQUpXM1VHSFhfaVBRUGhrbmhCS2dGbWZnNTduQ09hRElNTF80YkVkVjlWR080S0R1T19SUGpQUTdROXZPQTRZcmdqZGhlWjF6TFgxcjczQzZlM3NJZm9yRW9IM2U2bXZyalRaZTBmbkJxLUVoeERFRWV5TV8zcDFlQXJPTEwtSUJ1dWY3NXRnYmhUVXh4TXRFbGJCOGpWREkyQ2NvaUxacmNFY3lDRERxUVJyLV9meWpvR3NlajF0OTNYeHZjb1dKTHFleE1LSWhhVWtpR0oyc2s4Q1M4UGhoUEEzRlZSeG1CdUE3dnd3RzJsRjJ2M1ZwZ1ZfdmNGdS1zMGVsMGVxdjZZMTBLZ3h4MnM5SndDWVRRSHpGSXFHb3c=
         scope: RUN_TIME
         type: secret
       - key: ROBLOX_UNIVERSE_ID
