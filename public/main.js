@@ -48,6 +48,21 @@ function getAggregation(field) {
   return 'total';
 }
 
+function calculatePrediction(values) {
+  if (values.length < 2) return null;
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  const n = values.length;
+  values.forEach((y, x) => {
+    sumX += x;
+    sumY += y;
+    sumXY += x * y;
+    sumXX += x * x;
+  });
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  return Math.max(0, slope * n + intercept); // Predict next period (x = n), floor at 0
+}
+
 async function loadDashboard() {
   const { fields } = await api("/api/fields");
   const bucket = bucketSelect.value;
@@ -65,12 +80,16 @@ async function loadDashboard() {
   const container = document.getElementById("dashboardContainer");
   container.innerHTML = "";
 
+  const predictionsEl = document.getElementById("predictions");
+  predictionsEl.innerHTML = "";
+  let hasPredictions = false;
+
   for (const cat of Object.keys(categorized)) {
     if (categorized[cat].length === 0) continue;
 
     const section = document.createElement("section");
     section.className = "card";
-    section.innerHTML = `<h2>${cat}</h2><div class="chart-grid" id="grid-${cat.replace(/\s+/g, '')}"></div>`;
+    section.innerHTML = `<h2>${cat} Trends & Stats</h2><div class="chart-grid" id="grid-${cat.replace(/\s+/g, '')}"></div>`;
     container.appendChild(section);
 
     const grid = section.querySelector(".chart-grid");
@@ -87,13 +106,30 @@ async function loadDashboard() {
         const agg = getAggregation(field);
         api(`/api/trends?metric=${encodeURIComponent(field)}&bucket=${encodeURIComponent(bucket)}`).then(data => {
           const labels = data.series.map(x => x.time);
-          const values = data.series.map(x => x[agg]);
+          let values = data.series.map(x => x[agg]);
+
+          // Convert play time metrics to minutes (assuming base is seconds)
+          if (cat === 'Play Time') {
+            const isMs = /ms$/i.test(field.toLowerCase());
+            values = values.map(v => Number((v / (isMs ? 60000 : 60)).toFixed(2)));
+          }
+
+          // Generate predictions for key metrics
+          if (['Revenue', 'Play Time'].includes(cat) && values.length > 0) {
+            const nextVal = calculatePrediction(values);
+            if (nextVal !== null) {
+              hasPredictions = true;
+              const formattedNext = cat === 'Revenue' ? Math.round(nextVal) : nextVal.toFixed(1) + ' min';
+              predictionsEl.innerHTML += `<div class="stat-box"><small>${field} (Next ${bucket})</small><strong>${formattedNext}</strong></div>`;
+            }
+          }
+
           activeCharts.push(new Chart(document.getElementById(canvasId), {
             type: "line",
             data: {
               labels,
               datasets: [{
-                label: `${field} (${agg})`,
+                label: `${field} (${agg}${cat === 'Play Time' ? ' in mins' : ''})`,
                 data: values,
                 borderColor: "#0f8c6b",
                 backgroundColor: "rgba(15,140,107,0.2)",
@@ -126,6 +162,12 @@ async function loadDashboard() {
       }
     }
   }
+
+  setTimeout(() => {
+    if (!hasPredictions && predictionsEl.innerHTML === "") {
+      predictionsEl.innerHTML = `<div class="stat-box"><small>Status</small><strong>Not enough data for predictions</strong></div>`;
+    }
+  }, 1000);
 }
 
 async function loadTable() {
