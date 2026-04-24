@@ -23,9 +23,9 @@ npm install
 ```env
 PORT=3000
 DB_PATH=data/telemetry.db
-ROBLOX_API_KEY=...
-ROBLOX_UNIVERSE_ID=9485099582
-ROBLOX_DATASTORE_NAME=MA_PlayerTelemetry_V2
+ROBLOX_API_KEY=your-roblox-open-cloud-key
+ROBLOX_UNIVERSE_ID=your-roblox-universe-id
+ROBLOX_DATASTORE_NAME=your-roblox-datastore-name
 ```
 
 ## 2. Run
@@ -49,9 +49,9 @@ npm run sync
 This repo is ready for DigitalOcean App Platform with the included `Dockerfile` and `digitalocean.app.yaml` template.
 
 1. Push the repo to GitHub.
-2. In `digitalocean.app.yaml`, replace `YOUR_GITHUB_USER/YOUR_REPO` with your GitHub repo slug.
+2. In `digitalocean.app.yaml`, the GitHub repo is already set to `Anders-Brodd/MA-Player-Data`.
 3. In DigitalOcean App Platform, create an app from the GitHub repo or import the app spec.
-4. Set the required secrets in DigitalOcean, especially `ROBLOX_API_KEY`.
+4. Set the required values in DigitalOcean to match your `.env`, especially `ROBLOX_API_KEY`, `ROBLOX_UNIVERSE_ID`, and `ROBLOX_DATASTORE_NAME`.
 5. If you need SQLite persistence across deploys, mount a volume at `/app/data` and keep `DB_PATH=/app/data/telemetry.db`.
 
 ## 4. Important files
