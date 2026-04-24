@@ -26,6 +26,27 @@ async function fetchWithRetry(url, options = {}, maxRetries = config.maxRetries)
   return null;
 }
 
+function extractKeyValue(keyObj) {
+  if (!keyObj) return null;
+  if (typeof keyObj === "string") return keyObj;
+  if (typeof keyObj.key === "string") return keyObj.key;
+  if (typeof keyObj.entryKey === "string") return keyObj.entryKey;
+  if (typeof keyObj.name === "string") {
+    const parts = keyObj.name.split("/");
+    return parts[parts.length - 1] || null;
+  }
+  return null;
+}
+
+function tryParseJsonString(value) {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
 export async function listAllKeys() {
   let cursor = "";
   let hasMore = true;
@@ -35,6 +56,9 @@ export async function listAllKeys() {
     const base = `https://apis.roblox.com/datastores/v1/universes/${config.universeId}/standard-datastores/datastore/entries`;
     const url = new URL(base);
     url.searchParams.set("datastoreName", config.dataStoreName);
+    if (config.dataStoreScope) {
+      url.searchParams.set("scope", config.dataStoreScope);
+    }
     url.searchParams.set("maxPageSize", String(config.syncPageLimit));
     if (cursor) url.searchParams.set("cursor", cursor);
 
@@ -53,8 +77,11 @@ export async function listAllKeys() {
 
     const payload = await res.json();
     if (Array.isArray(payload.keys)) {
-      keys.push(...payload.keys.map((k) => k.key));
-      log(`Loaded ${payload.keys.length} keys (running total ${keys.length})`);
+      const batch = payload.keys
+        .map((k) => extractKeyValue(k))
+        .filter((k) => typeof k === "string" && k.length > 0);
+      keys.push(...batch);
+      log(`Loaded ${batch.length} keys (running total ${keys.length})`);
     }
 
     if (payload.nextPageCursor) {
@@ -72,6 +99,9 @@ export async function getEntry(entryKey) {
   const base = `https://apis.roblox.com/datastores/v1/universes/${config.universeId}/standard-datastores/datastore/entries/entry`;
   const url = new URL(base);
   url.searchParams.set("datastoreName", config.dataStoreName);
+  if (config.dataStoreScope) {
+    url.searchParams.set("scope", config.dataStoreScope);
+  }
   url.searchParams.set("entryKey", entryKey);
 
   const res = await fetchWithRetry(url.toString(), {
@@ -89,7 +119,13 @@ export async function getEntry(entryKey) {
 
   const text = await res.text();
   try {
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+
+    if (parsed && typeof parsed === "object" && Object.prototype.hasOwnProperty.call(parsed, "value")) {
+      return tryParseJsonString(parsed.value);
+    }
+
+    return parsed;
   } catch {
     return text;
   }

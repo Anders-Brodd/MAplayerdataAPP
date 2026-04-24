@@ -14,6 +14,7 @@ export const config = {
   robloxApiKey: process.env.ROBLOX_API_KEY || "",
   universeId: process.env.ROBLOX_UNIVERSE_ID || "",
   dataStoreName: process.env.ROBLOX_DATASTORE_NAME || "",
+  dataStoreScope: process.env.ROBLOX_DATASTORE_SCOPE || "",
   syncPageLimit: numberEnv("SYNC_PAGE_LIMIT", 250),
   maxRetries: numberEnv("SYNC_MAX_RETRIES", 5),
   throttleMs: numberEnv("SYNC_THROTTLE_MS", 80)

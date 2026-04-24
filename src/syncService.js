@@ -7,6 +7,10 @@ let latestSyncRun = null;
 let nextRunId = 1;
 let cachedEntries = [];
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function pickUpdatedAt(record) {
   const candidates = [
     "UpdatedAt_ISO",
@@ -99,9 +103,17 @@ export function isSyncInProgress() {
 }
 
 export async function ensureEntriesLoaded() {
-  if (cachedEntries.length > 0 || syncInProgress) {
+  if (cachedEntries.length > 0) {
     return;
   }
+
+  if (syncInProgress) {
+    while (syncInProgress) {
+      await sleep(200);
+    }
+    return;
+  }
+
   await syncNow();
 }
 
