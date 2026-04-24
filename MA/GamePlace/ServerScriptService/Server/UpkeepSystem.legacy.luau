@@ -1,0 +1,2 @@
+-- Legacy wage handling removed.
+-- Employee wages and unpaid-state logic are owned by ServerScriptService.Employe System.EmployeeServer.

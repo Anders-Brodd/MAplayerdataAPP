@@ -29,32 +29,16 @@
 
       <section class="card controls">
         <div>
-          <label for="metricSelect">Trend Metric</label>
-          <select id="metricSelect"></select>
-        </div>
-        <div>
-          <label for="bucketSelect">Time Bucket</label>
+          <label for="bucketSelect">Global Trend Bucket</label>
           <select id="bucketSelect">
             <option value="day">Day</option>
             <option value="week">Week</option>
             <option value="month">Month</option>
           </select>
         </div>
-        <div>
-          <label for="topFieldSelect">Top Grouping Field</label>
-          <select id="topFieldSelect"></select>
-        </div>
       </section>
 
-      <section class="card chart-card">
-        <h2>Trend</h2>
-        <canvas id="trendChart"></canvas>
-      </section>
-
-      <section class="card chart-card">
-        <h2>Top Categories</h2>
-        <canvas id="topChart"></canvas>
-      </section>
+      <div id="dashboardContainer"></div>
 
       <section class="card table-card">
         <h2>Recent Normalized Entries</h2>

@@ -150,6 +150,35 @@ select {
   max-height: 300px;
 }
 
+#dashboardContainer {
+  display: grid;
+  gap: 18px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.chart-wrap {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.chart-wrap h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--ink-muted);
+}
+
+.chart-wrap canvas {
+  max-height: 240px;
+}
+
 .table-wrap {
   overflow: auto;
 }

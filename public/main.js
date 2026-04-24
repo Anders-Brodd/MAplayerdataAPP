@@ -1,15 +1,12 @@
 const syncBtn = document.getElementById("syncBtn");
 const syncStatus = document.getElementById("syncStatus");
 const overviewEl = document.getElementById("overview");
-const metricSelect = document.getElementById("metricSelect");
 const bucketSelect = document.getElementById("bucketSelect");
-const topFieldSelect = document.getElementById("topFieldSelect");
 
 const tableHead = document.querySelector("#entriesTable thead");
 const tableBody = document.querySelector("#entriesTable tbody");
 
-let trendChart;
-let topChart;
+let activeCharts = [];
 
 async function api(path, init) {
   const res = await fetch(path, init);
@@ -31,94 +28,104 @@ function renderOverview(data) {
   `;
 }
 
-function refillSelect(select, values, preferred = null) {
-  const previous = preferred ?? select.value;
-  select.innerHTML = "";
-  for (const value of values) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value;
-    select.appendChild(option);
-  }
-  if (values.includes(previous)) {
-    select.value = previous;
-  }
+function categorizeField(field) {
+  const f = field.toLowerCase();
+  if (/money|robux|purchase|spend|earn|coin|gem|revenue|price/i.test(f)) return 'Revenue';
+  if (/time|duration|session|playtime|online/i.test(f)) return 'Play Time';
+  if (/click|menu|button|screen|ui|open|close|hover/i.test(f)) return 'UI';
+  if (/build|place|delete|prop|lift|item|structure/i.test(f)) return 'Building';
+  return 'General';
 }
 
-async function loadFields() {
+function getChartType(field) {
+  if (/(label|type|id|name|category|class)$/i.test(field.toLowerCase())) return 'top';
+  return 'trend';
+}
+
+function getAggregation(field) {
+  const f = field.toLowerCase();
+  if (/time|duration|ping|rate|level|health/i.test(f) && !/total/i.test(f)) return 'average';
+  return 'total';
+}
+
+async function loadDashboard() {
   const { fields } = await api("/api/fields");
-  const numericLikely = fields.filter((f) => /count|money|spent|earned|duration|level|xp|sessions|total/i.test(f));
-  const idLikely = fields.filter((f) => /(label|type|id)/i.test(f));
-
-  refillSelect(metricSelect, numericLikely.length ? numericLikely : fields);
-  refillSelect(topFieldSelect, idLikely.length ? idLikely : fields);
-}
-
-async function loadTrend() {
-  const metric = metricSelect.value;
-  if (!metric) return;
   const bucket = bucketSelect.value;
+  const skip = ["EntryKey", "RawValue", "Timestamp_ISO", "UpdatedAt_ISO"];
+  
+  const categorized = { 'Revenue': [], 'Play Time': [], 'UI': [], 'Building': [], 'General': [] };
+  fields.forEach(f => {
+    if (skip.includes(f)) return;
+    categorized[categorizeField(f)].push(f);
+  });
 
-  const data = await api(`/api/trends?metric=${encodeURIComponent(metric)}&bucket=${encodeURIComponent(bucket)}`);
+  activeCharts.forEach(c => c.destroy());
+  activeCharts = [];
 
-  const labels = data.series.map((x) => x.time);
-  const values = data.series.map((x) => x.total);
+  const container = document.getElementById("dashboardContainer");
+  container.innerHTML = "";
 
-  if (trendChart) trendChart.destroy();
-  trendChart = new Chart(document.getElementById("trendChart"), {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: `${metric} (total)` ,
-          data: values,
-          borderColor: "#0f8c6b",
-          backgroundColor: "rgba(15,140,107,0.2)",
-          fill: true,
-          tension: 0.22
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true
-        }
+  for (const cat of Object.keys(categorized)) {
+    if (categorized[cat].length === 0) continue;
+
+    const section = document.createElement("section");
+    section.className = "card";
+    section.innerHTML = `<h2>${cat}</h2><div class="chart-grid" id="grid-${cat.replace(/\s+/g, '')}"></div>`;
+    container.appendChild(section);
+
+    const grid = section.querySelector(".chart-grid");
+
+    for (const field of categorized[cat]) {
+      const wrap = document.createElement("div");
+      wrap.className = "chart-wrap";
+      const canvasId = `chart-${field.replace(/[^a-zA-Z0-9]/g, '')}`;
+      wrap.innerHTML = `<h3>${field}</h3><canvas id="${canvasId}"></canvas>`;
+      grid.appendChild(wrap);
+
+      const type = getChartType(field);
+      if (type === 'trend') {
+        const agg = getAggregation(field);
+        api(`/api/trends?metric=${encodeURIComponent(field)}&bucket=${encodeURIComponent(bucket)}`).then(data => {
+          const labels = data.series.map(x => x.time);
+          const values = data.series.map(x => x[agg]);
+          activeCharts.push(new Chart(document.getElementById(canvasId), {
+            type: "line",
+            data: {
+              labels,
+              datasets: [{
+                label: `${field} (${agg})`,
+                data: values,
+                borderColor: "#0f8c6b",
+                backgroundColor: "rgba(15,140,107,0.2)",
+                fill: true,
+                tension: 0.22
+              }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+          }));
+        });
+      } else {
+        api(`/api/top?field=${encodeURIComponent(field)}`).then(data => {
+          const labels = data.values.map(x => x.label);
+          const values = data.values.map(x => x.count);
+          activeCharts.push(new Chart(document.getElementById(canvasId), {
+            type: "bar",
+            data: {
+              labels,
+              datasets: [{
+                label: `${field} frequency`,
+                data: values,
+                backgroundColor: "rgba(209,162,68,0.75)",
+                borderColor: "#a77927",
+                borderWidth: 1
+              }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+          }));
+        });
       }
     }
-  });
-}
-
-async function loadTop() {
-  const field = topFieldSelect.value;
-  if (!field) return;
-
-  const data = await api(`/api/top?field=${encodeURIComponent(field)}`);
-  const labels = data.values.map((x) => x.label);
-  const values = data.values.map((x) => x.count);
-
-  if (topChart) topChart.destroy();
-  topChart = new Chart(document.getElementById("topChart"), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: `${field} frequency`,
-          data: values,
-          backgroundColor: "rgba(209,162,68,0.75)",
-          borderColor: "#a77927",
-          borderWidth: 1
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } }
-    }
-  });
+  }
 }
 
 async function loadTable() {
@@ -156,9 +163,7 @@ async function loadTable() {
 async function refreshAll() {
   const overview = await api("/api/overview");
   renderOverview(overview);
-  await loadFields();
-  await loadTrend();
-  await loadTop();
+  await loadDashboard();
   await loadTable();
 }
 
@@ -177,9 +182,7 @@ syncBtn.addEventListener("click", async () => {
   }
 });
 
-metricSelect.addEventListener("change", () => loadTrend());
-bucketSelect.addEventListener("change", () => loadTrend());
-topFieldSelect.addEventListener("change", () => loadTop());
+bucketSelect.addEventListener("change", () => loadDashboard());
 
 refreshAll().catch((err) => {
   setStatus("Load failed");

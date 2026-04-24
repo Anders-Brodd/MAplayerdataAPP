@@ -1,0 +1,5 @@
+-- The new system already has a built-in migration command!
+-- Please delete this file. 
+--
+-- To run the migration, open the chat in-game and run:
+-- /migrateprofiles start all
