@@ -21,10 +21,6 @@ services:
         value: "8080"
         scope: RUN_TIME
         type: general
-      - key: DB_PATH
-        value: /app/data/telemetry.db
-        scope: RUN_TIME
-        type: general
       - key: ROBLOX_API_KEY
         value: your-roblox-open-cloud-key
         scope: RUN_TIME

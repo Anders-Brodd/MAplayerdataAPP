@@ -6,7 +6,8 @@ This project replaces the old Google Apps Script with a proper backend + website
 - Retries with exponential backoff on 429 rate limits.
 - Deep-flattens nested JSON into table-friendly fields.
 - Converts timestamps/IDs/enums into human-readable columns.
-- Stores normalized records in SQLite.
+- Uses Roblox DataStores as the source of truth.
+- Caches normalized records in server memory for analytics APIs.
 - Exposes API endpoints for trend analysis and dashboard charts.
 
 ## 1. Setup
@@ -22,7 +23,6 @@ npm install
 
 ```env
 PORT=3000
-DB_PATH=data/telemetry.db
 ROBLOX_API_KEY=your-roblox-open-cloud-key
 ROBLOX_UNIVERSE_ID=your-roblox-universe-id
 ROBLOX_DATASTORE_NAME=your-roblox-datastore-name
@@ -52,7 +52,7 @@ This repo is ready for DigitalOcean App Platform with the included `Dockerfile` 
 2. In `digitalocean.app.yaml`, the GitHub repo is already set to `Anders-Brodd/MA-Player-Data`.
 3. In DigitalOcean App Platform, create an app from the GitHub repo or import the app spec.
 4. Set the required values in DigitalOcean to match your `.env`, especially `ROBLOX_API_KEY`, `ROBLOX_UNIVERSE_ID`, and `ROBLOX_DATASTORE_NAME`.
-5. If you need SQLite persistence across deploys, mount a volume at `/app/data` and keep `DB_PATH=/app/data/telemetry.db`.
+5. Trigger `/api/sync` after deploy or restart to warm the in-memory analytics cache.
 
 ## 4. Important files
 
@@ -60,7 +60,7 @@ This repo is ready for DigitalOcean App Platform with the included `Dockerfile` 
 - `src/normalize.js`: flattening + human-readable transformations
 - `src/mappings.js`: your ID/enum translation dictionaries
 - `src/trends.js`: grouping and trend series calculations
-- `src/db.js`: SQLite schema and queries
+- `src/syncService.js`: pulls from Roblox and maintains in-memory analytics cache
 - `src/server.js`: API endpoints + static dashboard
 
 ## 5. Make random IDs human-readable
@@ -93,7 +93,7 @@ When fields contain IDs/types, the pipeline adds `*_Label` columns.
 
 Use these endpoints for BI tools (Metabase, Grafana, Power BI) if you later move beyond the built-in dashboard.
 
-## 6. Security note
+## 7. Security note
 
 Do not expose your Roblox API key in frontend code or source control.
 If your key was shared publicly, rotate it in Roblox Open Cloud immediately.

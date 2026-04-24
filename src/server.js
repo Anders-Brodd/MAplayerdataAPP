@@ -6,13 +6,15 @@ import { fileURLToPath } from "url";
 import { config, validateConfig } from "./config.js";
 import { log } from "./logger.js";
 import {
+  ensureEntriesLoaded,
+  syncNow,
+  isSyncInProgress,
   getLatestSyncRun,
   getEntryCount,
   getAllEntries,
   getNormalizedFieldUniverse
-} from "./db.js";
+} from "./syncService.js";
 import { buildTrendSeries, buildTopDimensions } from "./trends.js";
-import { syncNow, isSyncInProgress } from "./syncService.js";
 
 const app = express();
 app.use(cors());
@@ -26,7 +28,8 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, syncInProgress: isSyncInProgress() });
 });
 
-app.get("/api/overview", (_req, res) => {
+app.get("/api/overview", async (_req, res) => {
+  await ensureEntriesLoaded();
   const latest = getLatestSyncRun();
   const count = getEntryCount();
   res.json({
@@ -36,11 +39,13 @@ app.get("/api/overview", (_req, res) => {
   });
 });
 
-app.get("/api/fields", (_req, res) => {
+app.get("/api/fields", async (_req, res) => {
+  await ensureEntriesLoaded();
   res.json({ fields: getNormalizedFieldUniverse() });
 });
 
-app.get("/api/players", (req, res) => {
+app.get("/api/players", async (req, res) => {
+  await ensureEntriesLoaded();
   const limit = Math.min(Number(req.query.limit) || 100, 1000);
   const rows = getAllEntries(limit).map((row) => ({
     entryKey: row.entry_key,
@@ -50,7 +55,7 @@ app.get("/api/players", (req, res) => {
   res.json({ rows });
 });
 
-app.get("/api/trends", (req, res) => {
+app.get("/api/trends", async (req, res) => {
   const metric = String(req.query.metric || "");
   const bucket = String(req.query.bucket || "day");
 
@@ -58,12 +63,13 @@ app.get("/api/trends", (req, res) => {
     return res.status(400).json({ error: "Query parameter 'metric' is required" });
   }
 
+  await ensureEntriesLoaded();
   const rows = getAllEntries(5000).map((r) => JSON.parse(r.normalized_json));
   const series = buildTrendSeries(rows, metric, bucket);
   return res.json({ metric, bucket, series });
 });
 
-app.get("/api/top", (req, res) => {
+app.get("/api/top", async (req, res) => {
   const field = String(req.query.field || "");
   const limit = Math.min(Number(req.query.limit) || 15, 100);
 
@@ -71,6 +77,7 @@ app.get("/api/top", (req, res) => {
     return res.status(400).json({ error: "Query parameter 'field' is required" });
   }
 
+  await ensureEntriesLoaded();
   const rows = getAllEntries(5000).map((r) => JSON.parse(r.normalized_json));
   const values = buildTopDimensions(rows, field, limit);
   return res.json({ field, values });

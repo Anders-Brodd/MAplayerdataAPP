@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import path from "path";
 
 dotenv.config();
 
@@ -12,8 +11,6 @@ function numberEnv(name, fallback) {
 
 export const config = {
   port: numberEnv("PORT", 3000),
-  dataDir: process.env.DATA_DIR || "data",
-  dbPath: process.env.DB_PATH || path.join(process.env.DATA_DIR || "data", "telemetry.db"),
   robloxApiKey: process.env.ROBLOX_API_KEY || "",
   universeId: process.env.ROBLOX_UNIVERSE_ID || "",
   dataStoreName: process.env.ROBLOX_DATASTORE_NAME || "",

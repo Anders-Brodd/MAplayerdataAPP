@@ -1,7 +1,4 @@
 node_modules
 .git
 .env
-data/*.db
-data/*.db-shm
-data/*.db-wal
 npm-debug.log
